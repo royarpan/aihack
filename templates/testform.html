@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>Submit a form</title>
+     <link rel="stylesheet" type="text/css" href="/static/style.css">
+  </head>
+  <body>
+    <div id="container">
+      <div class="pagetitle">
+        <h1>Test image on trained model</h1>
+      </div>
+      <div id="main">
+        <form method="post" enctype=multipart/form-data action="{{ url_for('submittedtest_form') }}">
+          <label for="name">Name:</label>
+          <input type="text" name="name"><br />
+          <label for="email">Email address:</label>
+          <input type="email" name="email"><br />
+          <label for="comments">Comments:</label>
+          <textarea name="comments"></textarea><br />
+          <label for="file">Upload file:</label>
+          <input type = "file" name = "file" /><br />
+
+          <input type="submit">
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
