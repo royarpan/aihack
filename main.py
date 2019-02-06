@@ -26,6 +26,9 @@ def submittedtrain_form():
     comments = request.form['comments']
     f = request.files['file']
     filename=secure_filename(f.filename)
+    n=len(filename)
+    filename=filename[0:n-3]+filename[-3:].lower()
+    print filename
     with open(userfilemap, 'a') as the_file:
         the_file.write("\n"+name.replace(" ","")+" "+filename)
     f.save(os.path.join(app.config['TRAIN_FOLDER'],filename))
@@ -49,6 +52,7 @@ def submittedtrain_form():
         line = f.readline()
 
     print("No. of users= ",len(setofusers))
+    print ("User dictionary: ",userdict)
     Ygen=to_categorical(y,len(setofusers))   
 
     if(comments=='Add file'):
@@ -65,7 +69,7 @@ def submittedtrain_form():
             print ("Filepath ",i," : ",filepath)
             img = cv2.imread(filepath,cv2.IMREAD_GRAYSCALE)
             pixelmap=np.asarray(img)
-            #print pixelmap.shape
+            print pixelmap.shape
             pixelmap = cv2.resize(pixelmap,(250,150),interpolation=cv2.INTER_AREA)  #resize the image to manage the computational complexity in training
             pixelmap = np.expand_dims(pixelmap, axis=2) #to map it to ML model input
             pixelmap=pixelmap/255 #normalize the image data
@@ -120,7 +124,7 @@ def submittedtrain_form():
         model.compile(loss='categorical_crossentropy', optimizer=Adam(), metrics=['accuracy'])
         #print(model.summary())
 
-        model.fit(x=np.array(gen),y=np.array(Ygen),epochs=28,batch_size=5,verbose=1)
+        model.fit(x=np.array(gen),y=np.array(Ygen),epochs=40,batch_size=5,verbose=1)
         
         model.save('deepwriter.h5')
         comments_response="Training completed successfully for full dataset"
@@ -147,7 +151,7 @@ def submittedtest_form():
     filename=secure_filename(f.filename)
     uploadedfilepath=os.path.join(app.config['TEST_FOLDER'],filename)
     f.save(uploadedfilepath)
-    print uploadedfilepath
+    #print uploadedfilepath
     img=cv2.imread(uploadedfilepath,cv2.IMREAD_GRAYSCALE)
     pixelmap=np.asarray(img)
     #print pixelmap.shape
@@ -158,7 +162,7 @@ def submittedtest_form():
     global graph
     graph = tf.get_default_graph()
     with graph.as_default():
-        model = load_model("/Users/royarpan/Desktop/MLprod/deepwriter.h5")
+        model = load_model("deepwriter.h5")
         results=model.predict(imgarr)
 
     f = open(userfilemap)
@@ -175,19 +179,26 @@ def submittedtest_form():
         line = f.readline()
 
     print("No. of users= ",len(setofusers))   
-
+    flag=0
     for i in range(len(results[0])):
-        if results[0][i]>10**(-2):
+        if results[0][i]>0.5:
             pred=i
             probability=results[0][i]
+	    flag=1
             break
-    listOfItems = userdict.items()
-    for item in listOfItems:
-        if item[1] == pred:
-           prediction=item[0]
-           break
-    K.clear_session()
+   
+    if flag==1:
+    	listOfItems = userdict.items()
+    	for item in listOfItems:
+           if item[1] == pred:
+              prediction=item[0]
+              break
+    else:
+	prediction="NA"
+	probability=0
 
+    K.clear_session()
+    
     return render_template(
     'submitted_test.html',
     name=name,
